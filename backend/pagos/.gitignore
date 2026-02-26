@@ -1,0 +1,67 @@
+# Backend dependencies
+# ============ .NET / C# ============
+# Build results
+bin/
+obj/
+out/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Bb]uild/
+bld/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+*.csproj.user
+
+# NuGet
+packages/
+*.nupkg
+*.snupkg
+.nuget/
+project.lock.json
+project.fragment.lock.json
+
+# Rider / JetBrains
+.idea/
+
+# ============ ENVIRONMENT ============
+.env
+.env.*
+!.env.example
+appsettings.local.json
+appsettings.*.local.json
+secrets.json
+
+# ============ LOGS ============
+*.log
+logs/
+
+# ============ TEST RESULTS ============
+TestResults/
+*.trx
+coverage/
+
+# ============ IDE ============
+.vscode/
+*.swp
+*.swo
+
+# ============ OS ============
+.DS_Store
+Thumbs.db
+
+# ============ DOCKER ============
+.docker/
+
+# ============ CERTIFICATES ============
+*.pem
+*.key
+*.crt
+*.pfx

@@ -1,0 +1,51 @@
+graph TB
+    subgraph Usuarios["📦 Usuarios Microservice"]
+        direction TB
+        UA[API Layer<br/>Controllers]
+        UApp[Application Layer<br/>Services & DTOs]
+        UD[Domain Layer<br/>Entities & Interfaces]
+        UI[Infrastructure Layer<br/>MongoDB Repository]
+        
+        UA --> UApp
+        UApp --> UD
+        UI --> UD
+    end
+    
+    subgraph Pedidos["📦 Pedidos Microservice"]
+        direction TB
+        PA[API Layer<br/>Controllers]
+        PApp[Application Layer<br/>Services & DTOs]
+        PD[Domain Layer<br/>Entities & Interfaces]
+        PI[Infrastructure Layer<br/>MongoDB Repository]
+        
+        PA --> PApp
+        PApp --> PD
+        PI --> PD
+    end
+    
+    subgraph Pagos["📦 Pagos Microservice"]
+        direction TB
+        PgA[API Layer<br/>Controllers]
+        PgApp[Application Layer<br/>Services & DTOs]
+        PgD[Domain Layer<br/>Entities & Interfaces]
+        PgI[Infrastructure Layer<br/>MongoDB Repository]
+        
+        PgA --> PgApp
+        PgApp --> PgD
+        PgI --> PgD
+    end
+    
+    style UA fill:#2196F3,color:#fff
+    style UApp fill:#4CAF50,color:#fff
+    style UD fill:#FF9800,color:#fff
+    style UI fill:#9C27B0,color:#fff
+    
+    style PA fill:#2196F3,color:#fff
+    style PApp fill:#4CAF50,color:#fff
+    style PD fill:#FF9800,color:#fff
+    style PI fill:#9C27B0,color:#fff
+    
+    style PgA fill:#2196F3,color:#fff
+    style PgApp fill:#4CAF50,color:#fff
+    style PgD fill:#FF9800,color:#fff
+    style PgI fill:#9C27B0,color:#fff

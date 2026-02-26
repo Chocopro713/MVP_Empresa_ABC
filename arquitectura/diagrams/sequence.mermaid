@@ -1,0 +1,36 @@
+sequenceDiagram
+    autonumber
+    participant U as Usuario
+    participant F as Frontend<br/>(Angular 19)
+    participant G as Guards
+    participant API as REST APIs
+    participant DB as MongoDB
+
+    rect rgb(240, 248, 255)
+        Note over U,F: Flujo de Login
+        U->>F: Ingresar credenciales
+        F->>F: Validar formulario reactivo
+        F->>F: Autenticar (simulado)
+        F->>F: Guardar en localStorage
+        F-->>U: Redirigir a Dashboard
+    end
+
+    rect rgb(255, 248, 240)
+        Note over U,DB: Flujo de Datos
+        U->>F: Navegar a /users
+        F->>G: authGuard.canActivate()
+        G->>G: Verificar token
+        G-->>F: Acceso permitido
+        F->>API: GET /users (JSONPlaceholder)
+        API-->>F: Lista de usuarios
+        F->>F: Filtrar según rol
+        F-->>U: Mostrar datos
+    end
+
+    rect rgb(240, 255, 240)
+        Note over F,DB: Microservicios Backend
+        F->>API: GET /api/usuarios
+        API->>DB: MongoDB Query
+        DB-->>API: Documentos
+        API-->>F: JSON Response
+    end

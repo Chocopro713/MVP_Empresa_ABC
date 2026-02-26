@@ -1,0 +1,182 @@
+version: '3.8'
+
+services:
+  # ============================================
+  # DATABASES
+  # ============================================
+  
+  mongo-usuarios:
+    image: mongo:7.0
+    container_name: mongo-usuarios
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: usuarios_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-usuarios-data:/data/db
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongo-pedidos:
+    image: mongo:7.0
+    container_name: mongo-pedidos
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: pedidos_db
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo-pedidos-data:/data/db
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongo-pagos:
+    image: mongo:7.0
+    container_name: mongo-pagos
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: pagos_db
+    ports:
+      - "27019:27017"
+    volumes:
+      - mongo-pagos-data:/data/db
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # MICROSERVICES
+  # ============================================
+
+  usuarios-api:
+    build:
+      context: ./backend/usuarios
+      dockerfile: Dockerfile
+    container_name: usuarios-api
+    restart: unless-stopped
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:80
+      - MongoDB__ConnectionString=mongodb://admin:password123@mongo-usuarios:27017
+      - MongoDB__DatabaseName=usuarios_db
+    ports:
+      - "5001:80"
+    depends_on:
+      mongo-usuarios:
+        condition: service_healthy
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  pedidos-api:
+    build:
+      context: ./backend/pedidos
+      dockerfile: Dockerfile
+    container_name: pedidos-api
+    restart: unless-stopped
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:80
+      - MongoDB__ConnectionString=mongodb://admin:password123@mongo-pedidos:27017
+      - MongoDB__DatabaseName=pedidos_db
+    ports:
+      - "5002:80"
+    depends_on:
+      mongo-pedidos:
+        condition: service_healthy
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  pagos-api:
+    build:
+      context: ./backend/pagos
+      dockerfile: Dockerfile
+    container_name: pagos-api
+    restart: unless-stopped
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:80
+      - MongoDB__ConnectionString=mongodb://admin:password123@mongo-pagos:27017
+      - MongoDB__DatabaseName=pagos_db
+    ports:
+      - "5003:80"
+    depends_on:
+      mongo-pagos:
+        condition: service_healthy
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================
+  # FRONTEND
+  # ============================================
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    restart: unless-stopped
+    ports:
+      - "4200:80"
+    depends_on:
+      - usuarios-api
+      - pedidos-api
+      - pagos-api
+    networks:
+      - microservices-network
+
+# ============================================
+# NETWORKS
+# ============================================
+
+networks:
+  microservices-network:
+    driver: bridge
+    name: microservices-network
+
+# ============================================
+# VOLUMES
+# ============================================
+
+volumes:
+  mongo-usuarios-data:
+    name: mongo-usuarios-data
+  mongo-pedidos-data:
+    name: mongo-pedidos-data
+  mongo-pagos-data:
+    name: mongo-pagos-data

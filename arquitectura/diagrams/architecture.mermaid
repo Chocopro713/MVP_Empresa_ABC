@@ -1,0 +1,51 @@
+graph TB
+    subgraph Client["🌐 Cliente"]
+        Browser["Browser/Mobile"]
+    end
+    
+    subgraph Frontend["📱 Frontend Layer"]
+        Angular["Angular 19 SPA<br/>───────────<br/>• Standalone Components<br/>• Angular Material<br/>• Guards & Interceptors"]
+    end
+    
+    subgraph Gateway["🚪 API Gateway"]
+        Nginx["Nginx<br/>───────────<br/>• Reverse Proxy<br/>• Load Balancing<br/>• SSL Termination"]
+    end
+    
+    subgraph Microservices["⚙️ Microservices Layer"]
+        direction LR
+        Usuarios["Usuarios API<br/>───────────<br/>.NET 9<br/>Clean Architecture<br/>Port: 5001"]
+        Pedidos["Pedidos API<br/>───────────<br/>.NET 9<br/>Clean Architecture<br/>Port: 5002"]
+        Pagos["Pagos API<br/>───────────<br/>.NET 9<br/>Clean Architecture<br/>Port: 5003"]
+    end
+    
+    subgraph DataLayer["💾 Data Layer"]
+        direction LR
+        MongoUsers[("MongoDB<br/>Usuarios<br/>Port: 27017")]
+        MongoPedidos[("MongoDB<br/>Pedidos<br/>Port: 27018")]
+        MongoPagos[("MongoDB<br/>Pagos<br/>Port: 27019")]
+    end
+    
+    subgraph External["🌍 External Services"]
+        JSONPlaceholder["JSONPlaceholder API<br/>───────────<br/>• /users<br/>• /posts<br/>• /todos"]
+    end
+    
+    Browser --> Angular
+    Angular --> Nginx
+    Angular -.-> JSONPlaceholder
+    Nginx --> Usuarios
+    Nginx --> Pedidos
+    Nginx --> Pagos
+    Usuarios --> MongoUsers
+    Pedidos --> MongoPedidos
+    Pagos --> MongoPagos
+    
+    style Browser fill:#e1f5fe
+    style Angular fill:#DD0031,color:#fff
+    style Nginx fill:#009639,color:#fff
+    style Usuarios fill:#512BD4,color:#fff
+    style Pedidos fill:#512BD4,color:#fff
+    style Pagos fill:#512BD4,color:#fff
+    style MongoUsers fill:#47A248,color:#fff
+    style MongoPedidos fill:#47A248,color:#fff
+    style MongoPagos fill:#47A248,color:#fff
+    style JSONPlaceholder fill:#ff9800,color:#fff
