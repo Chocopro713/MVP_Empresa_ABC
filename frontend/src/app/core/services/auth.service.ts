@@ -1,7 +1,7 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-import { AuthUser, LoginCredentials, Usuario } from '../models/models';
+import { AuthUser, LoginCredentials, Usuario, ApiResponse } from '../models/models';
 import { environment } from '@env/environment';
 import { firstValueFrom } from 'rxjs';
 
@@ -47,9 +47,11 @@ export class AuthService {
   async login(credentials: LoginCredentials): Promise<{ success: boolean; message: string }> {
     try {
       // Buscar usuario por email en la API real
-      const usuarios = await firstValueFrom(
-        this.http.get<Usuario[]>(`${this.usuariosApiUrl}/usuarios`)
+      const response = await firstValueFrom(
+        this.http.get<ApiResponse<Usuario[]>>(`${this.usuariosApiUrl}/usuarios`)
       );
+      
+      const usuarios = response.data || [];
       
       // Buscar por email o nombre de usuario
       const usuario = usuarios.find((u: Usuario) => 
