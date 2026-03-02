@@ -1,10 +1,10 @@
 graph TB
     subgraph Usuarios["📦 Usuarios Microservice"]
         direction TB
-        UA[API Layer<br/>Controllers]
-        UApp[Application Layer<br/>Services & DTOs]
+        UA[API Layer<br/>Controllers + ApiResponse<br/>DataAnnotations Validation]
+        UApp[Application Layer<br/>Services + ServiceResult<br/>Business Validation]
         UD[Domain Layer<br/>Entities & Interfaces]
-        UI[Infrastructure Layer<br/>MongoDB Repository]
+        UI[Infrastructure Layer<br/>MongoDB Repository<br/>Uniqueness Checks]
         
         UA --> UApp
         UApp --> UD
@@ -13,7 +13,7 @@ graph TB
     
     subgraph Pedidos["📦 Pedidos Microservice"]
         direction TB
-        PA[API Layer<br/>Controllers]
+        PA[API Layer<br/>Controllers + ApiResponse<br/>Search by Query]
         PApp[Application Layer<br/>Services & DTOs]
         PD[Domain Layer<br/>Entities & Interfaces]
         PI[Infrastructure Layer<br/>MongoDB Repository]
@@ -25,7 +25,7 @@ graph TB
     
     subgraph Pagos["📦 Pagos Microservice"]
         direction TB
-        PgA[API Layer<br/>Controllers]
+        PgA[API Layer<br/>Controllers + ApiResponse<br/>Payment Simulation]
         PgApp[Application Layer<br/>Services & DTOs]
         PgD[Domain Layer<br/>Entities & Interfaces]
         PgI[Infrastructure Layer<br/>MongoDB Repository]

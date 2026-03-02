@@ -35,7 +35,12 @@ builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 
 // Controllers
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        // Suprimir la respuesta automática de validación para usar nuestro formato
+        options.SuppressModelStateInvalidFilter = true;
+    });
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();

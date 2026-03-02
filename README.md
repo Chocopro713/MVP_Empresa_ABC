@@ -9,6 +9,24 @@
 
 Sistema MVP de gestión de pedidos desarrollado con arquitectura de microservicios, diseñado para la empresa ABC como parte de su proceso de migración tecnológica. El proyecto demuestra buenas prácticas de desarrollo, arquitectura limpia y patrones de diseño empresariales.
 
+## ✨ Características Principales
+
+### Backend
+- **Respuesta Estándar API**: Formato unificado `ApiResponse<T>` con success, message, data, errors y timestamp
+- **Validaciones Robustas**: DataAnnotations en DTOs + validaciones de negocio en servicios
+- **Unicidad de Datos**: Validación de email y teléfono únicos en usuarios
+- **Búsqueda por Query String**: Filtrado en todos los endpoints GET
+- **Health Checks**: Endpoints de salud para monitoreo
+
+### Frontend
+- **CRUD Completo**: Gestión de Usuarios, Pedidos y Pagos
+- **Formularios Reactivos**: Validaciones en tiempo real con Angular Reactive Forms
+- **Simulación de Pagos**: Flujo completo de pago de pedidos (PENDIENTE → PAGADO)
+- **Búsqueda con Debounce**: Filtrado eficiente en todas las listas
+- **Selección de Usuario en Pedidos**: Lista desplegable al crear pedidos
+- **Tema Oscuro/Claro**: Toggle de modo de visualización
+- **PWA Ready**: Manifest y configuración para Progressive Web App
+
 ## 🏗️ Arquitectura
 
 ```mermaid
@@ -215,6 +233,15 @@ El frontend consume datos de la API pública:
 ## 🛠️ Comandos Útiles
 
 ```bash
+# Usar el script de ayuda
+./scripts/run.sh start    # Construir e iniciar servicios
+./scripts/run.sh stop     # Detener servicios
+./scripts/run.sh logs     # Ver logs
+./scripts/run.sh status   # Estado de contenedores
+./scripts/run.sh health   # Verificar health checks
+./scripts/run.sh clean    # Limpiar todo
+
+# O comandos Docker directos
 # Ver logs de todos los servicios
 docker-compose logs -f
 
@@ -239,9 +266,9 @@ docker-compose up --build usuarios-api
 |--------|----------|-------------|
 | GET | /health | Health check |
 | GET | /status | Estado del servicio |
-| GET | /api/usuarios | Listar usuarios |
+| GET | /api/usuarios | Listar usuarios (soporta `?search=`) |
 | GET | /api/usuarios/{id} | Obtener usuario |
-| POST | /api/usuarios | Crear usuario |
+| POST | /api/usuarios | Crear usuario (valida unicidad email/teléfono) |
 | PUT | /api/usuarios/{id} | Actualizar usuario |
 | DELETE | /api/usuarios/{id} | Eliminar usuario |
 
@@ -251,8 +278,9 @@ docker-compose up --build usuarios-api
 |--------|----------|-------------|
 | GET | /health | Health check |
 | GET | /status | Estado del servicio |
-| GET | /api/pedidos | Listar pedidos |
+| GET | /api/pedidos | Listar pedidos (soporta `?search=`) |
 | GET | /api/pedidos/{id} | Obtener pedido |
+| GET | /api/pedidos/usuario/{usuarioId} | Pedidos por usuario |
 | POST | /api/pedidos | Crear pedido |
 | PUT | /api/pedidos/{id} | Actualizar pedido |
 | DELETE | /api/pedidos/{id} | Eliminar pedido |
@@ -263,11 +291,39 @@ docker-compose up --build usuarios-api
 |--------|----------|-------------|
 | GET | /health | Health check |
 | GET | /status | Estado del servicio |
-| GET | /api/pagos | Listar pagos |
+| GET | /api/pagos | Listar pagos (soporta `?search=`) |
 | GET | /api/pagos/{id} | Obtener pago |
-| POST | /api/pagos | Crear pago |
+| GET | /api/pagos/pedido/{pedidoId} | Pagos por pedido |
+| GET | /api/pagos/usuario/{usuarioId} | Pagos por usuario |
+| POST | /api/pagos | Registrar pago |
 | PUT | /api/pagos/{id} | Actualizar pago |
 | DELETE | /api/pagos/{id} | Eliminar pago |
+
+## 📦 Formato de Respuesta Estándar
+
+Todas las APIs responden con el siguiente formato:
+
+```json
+{
+  "success": true,
+  "message": "Operación exitosa",
+  "data": { ... },
+  "errors": [],
+  "timestamp": "2026-03-02T12:00:00Z",
+  "traceId": "abc123"
+}
+```
+
+### Códigos de Estado HTTP
+
+| Código | Descripción | Uso |
+|--------|-------------|-----|
+| 200 | OK | Operación exitosa |
+| 201 | Created | Recurso creado |
+| 400 | Bad Request | Datos inválidos / Error de validación |
+| 404 | Not Found | Recurso no encontrado |
+| 409 | Conflict | Email o teléfono duplicado |
+| 500 | Internal Error | Error del servidor |
 
 ## 🧪 Testing
 
@@ -281,7 +337,44 @@ cd backend/pagos && dotnet test
 cd frontend && npm test
 ```
 
-## 📝 Licencia
+## � Validaciones Implementadas
+
+### Backend - Usuarios
+| Campo | Validación |
+|-------|------------|
+| Nombre | Requerido, 2-100 caracteres |
+| Email | Requerido, formato válido, único |
+| Teléfono | Requerido, formato válido, único |
+| Rol | Máximo 50 caracteres |
+
+### Frontend - Formularios
+- Validación en tiempo real con Reactive Forms
+- Mensajes de error específicos por campo
+- Indicadores visuales de campos inválidos
+- Botón submit deshabilitado si hay errores
+
+## 🎯 Flujo de Simulación de Pago
+
+```mermaid
+sequenceDiagram
+    participant U as Usuario
+    participant F as Frontend
+    participant P as Pedidos API
+    participant G as Pagos API
+    
+    U->>F: Click "Pagar Pedido"
+    F->>F: Mostrar modal de pago
+    U->>F: Seleccionar método y confirmar
+    F->>G: POST /api/pagos
+    G->>G: Crear registro de pago
+    G-->>F: Pago creado
+    F->>P: PUT /api/pedidos/{id}
+    F->>P: Estado = "PAGADO"
+    P-->>F: Pedido actualizado
+    F-->>U: Confirmación visual
+```
+
+## �📝 Licencia
 
 Este proyecto fue desarrollado como prueba técnica para la empresa ABC.
 

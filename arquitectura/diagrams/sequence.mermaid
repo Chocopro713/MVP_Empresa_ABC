@@ -16,21 +16,36 @@ sequenceDiagram
     end
 
     rect rgb(255, 248, 240)
-        Note over U,DB: Flujo de Datos
-        U->>F: Navegar a /users
-        F->>G: authGuard.canActivate()
-        G->>G: Verificar token
-        G-->>F: Acceso permitido
-        F->>API: GET /users (JSONPlaceholder)
-        API-->>F: Lista de usuarios
-        F->>F: Filtrar según rol
-        F-->>U: Mostrar datos
+        Note over U,DB: Flujo CRUD con Validaciones
+        U->>F: Crear usuario
+        F->>F: Validar Reactive Forms
+        F->>API: POST /api/usuarios
+        API->>API: Validar DataAnnotations
+        API->>DB: Verificar unicidad email
+        alt Email duplicado
+            API-->>F: 409 Conflict
+            F-->>U: Mostrar error específico
+        else Email único
+            API->>DB: Insertar documento
+            DB-->>API: OK
+            API-->>F: 201 ApiResponse
+            F-->>U: Mostrar éxito
+        end
     end
 
     rect rgb(240, 255, 240)
-        Note over F,DB: Microservicios Backend
-        F->>API: GET /api/usuarios
-        API->>DB: MongoDB Query
-        DB-->>API: Documentos
-        API-->>F: JSON Response
+        Note over F,DB: Flujo de Pago Simulado
+        U->>F: Click "Pagar Pedido"
+        F->>F: Mostrar modal
+        U->>F: Confirmar pago
+        F->>API: POST /api/pagos
+        API->>DB: Crear pago
+        DB-->>API: OK
+        API-->>F: 201 Pago creado
+        F->>API: PUT /api/pedidos/{id}
+        Note right of F: Estado = PAGADO
+        API->>DB: Actualizar pedido
+        DB-->>API: OK
+        API-->>F: 200 ApiResponse
+        F-->>U: Pedido pagado
     end

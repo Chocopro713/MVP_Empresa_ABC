@@ -26,7 +26,12 @@ public class UsuarioRepository : IUsuarioRepository
 
     public async Task<Usuario?> GetByEmailAsync(string email)
     {
-        return await _context.Usuarios.Find(u => u.Email == email).FirstOrDefaultAsync();
+        return await _context.Usuarios.Find(u => u.Email.ToLower() == email.ToLower()).FirstOrDefaultAsync();
+    }
+
+    public async Task<Usuario?> GetByTelefonoAsync(string telefono)
+    {
+        return await _context.Usuarios.Find(u => u.Telefono == telefono).FirstOrDefaultAsync();
     }
 
     public async Task<Usuario> CreateAsync(Usuario usuario)

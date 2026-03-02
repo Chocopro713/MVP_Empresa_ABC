@@ -221,6 +221,125 @@ Implementar autenticación simulada con roles hardcodeados.
 
 ---
 
+## ADR-009: Formato de Respuesta Estándar API
+
+### Estado
+Aceptado
+
+### Contexto
+Necesitamos un formato consistente de respuesta para todas las APIs que facilite el manejo en el frontend y proporcione información útil para debugging.
+
+### Decisión
+Implementar `ApiResponse<T>` como envoltorio estándar para todas las respuestas.
+
+### Estructura
+```json
+{
+  "success": true,
+  "message": "Operación exitosa",
+  "data": { },
+  "errors": [],
+  "timestamp": "2026-03-02T12:00:00Z",
+  "traceId": "abc123"
+}
+```
+
+### Métodos Factory
+```csharp
+ApiResponse<T>.Ok(data, message)           // 200
+ApiResponse<T>.Created(data, message)      // 201
+ApiResponse<T>.BadRequest(message, errors) // 400
+ApiResponse<T>.NotFound(message)           // 404
+ApiResponse<T>.Conflict(message, errors)   // 409
+```
+
+### Beneficios
+- Consistencia en todas las respuestas
+- Facilita manejo de errores en frontend
+- Incluye timestamp para debugging
+- Soporta múltiples errores de validación
+
+---
+
+## ADR-010: Validaciones en Capas
+
+### Estado
+Aceptado
+
+### Contexto
+Definir dónde y cómo validar los datos de entrada.
+
+### Decisión
+Implementar validaciones en múltiples capas:
+
+### Capa de Presentación (DTOs)
+```csharp
+public record CreateUsuarioDto {
+    [Required(ErrorMessage = "El nombre es requerido")]
+    [StringLength(100, MinimumLength = 2)]
+    public string Nombre { get; init; }
+
+    [Required]
+    [EmailAddress(ErrorMessage = "Formato de email inválido")]
+    public string Email { get; init; }
+}
+```
+
+### Capa de Aplicación (Servicios)
+```csharp
+// Validaciones de negocio
+if (await _repository.ExistsByEmailAsync(dto.Email))
+    return ServiceResult<T>.Failure("Email ya registrado");
+```
+
+### Beneficios
+- DataAnnotations: Validación automática, mensajes claros
+- Servicios: Reglas de negocio complejas
+- Separación de responsabilidades
+
+---
+
+## ADR-011: Patrón ServiceResult para Operaciones de Negocio
+
+### Estado
+Aceptado
+
+### Contexto
+Necesitamos comunicar el resultado de operaciones de servicio al controlador, incluyendo casos de éxito y diferentes tipos de errores.
+
+### Decisión
+Implementar `ServiceResult<T>` para encapsular resultados de operaciones.
+
+### Estructura
+```csharp
+public class ServiceResult<T> {
+    public bool Success { get; }
+    public T? Data { get; }
+    public string? ErrorMessage { get; }
+    public List<string> Errors { get; }
+    
+    public static ServiceResult<T> Ok(T data);
+    public static ServiceResult<T> Failure(string message);
+}
+```
+
+### Uso en Controlador
+```csharp
+var result = await _service.CreateAsync(dto);
+if (!result.Success) {
+    return Conflict(ApiResponse<T>.Conflict(result.ErrorMessage, result.Errors));
+}
+return Ok(ApiResponse<T>.Ok(result.Data));
+```
+
+### Beneficios
+- Evita excepciones para flujos de control
+- Tipado fuerte de resultados
+- Facilita testing
+- Código más legible
+
+---
+
 ## Diagrama de Componentes
 
 ```mermaid
@@ -315,6 +434,13 @@ sequenceDiagram
 - [x] CRUD básico
 - [x] Dockerización
 - [x] Frontend con roles
+- [x] Respuesta estándar API (ApiResponse)
+- [x] Validaciones con DataAnnotations
+- [x] Unicidad de email y teléfono
+- [x] Búsqueda por query string
+- [x] Simulación de pagos
+- [x] Formularios reactivos con validación
+- [x] Selección de usuario en pedidos
 
 ### Fase 2 (Próxima)
 - [ ] API Gateway (Kong/Ocelot)

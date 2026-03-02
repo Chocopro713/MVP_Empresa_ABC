@@ -49,6 +49,7 @@ export interface Usuario {
   nombre: string;
   email: string;
   telefono: string;
+  direccion: string;
   rol: string;
   activo: boolean;
   fechaCreacion: string;
@@ -58,6 +59,7 @@ export interface CreateUsuario {
   nombre: string;
   email: string;
   telefono: string;
+  direccion?: string;
   rol?: string;
 }
 
@@ -65,6 +67,7 @@ export interface UpdateUsuario {
   nombre: string;
   email: string;
   telefono: string;
+  direccion: string;
   rol: string;
   activo: boolean;
 }
@@ -79,6 +82,9 @@ export interface Pedido {
   estado: string;
   direccionEnvio: string;
   fechaCreacion: string;
+  // Campos enriquecidos desde el frontend (no vienen del backend)
+  usuarioNombre?: string;
+  usuarioEmail?: string;
 }
 
 export interface ItemPedido {
@@ -133,4 +139,24 @@ export interface CreatePago {
 export interface UpdatePago {
   estado: string;
   referenciaPago?: string;
+}
+
+// ============ RESPUESTAS ESTÁNDAR DE API ============
+
+export interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T | null;
+  errors: string[] | null;
+  timestamp: string;
+  traceId?: string;
+}
+
+export interface PaginatedResponse<T> extends ApiResponse<T[]> {
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
 }
