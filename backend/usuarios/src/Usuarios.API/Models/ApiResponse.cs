@@ -71,6 +71,16 @@ public class ApiResponse<T>
             Errors = errors ?? new List<string> { message }
         };
     }
+
+    public static ApiResponse<T> Unauthorized(string message = "No autorizado")
+    {
+        return new ApiResponse<T>
+        {
+            Success = false,
+            Message = message,
+            Errors = new List<string> { message }
+        };
+    }
 }
 
 /// <summary>
@@ -107,13 +117,23 @@ public class ApiResponse : ApiResponse<object>
         };
     }
 
-    public static ApiResponse Conflict(string message, List<string>? errors = null)
+    public new static ApiResponse Conflict(string message, List<string>? errors = null)
     {
         return new ApiResponse
         {
             Success = false,
             Message = message,
             Errors = errors ?? new List<string> { message }
+        };
+    }
+
+    public new static ApiResponse Unauthorized(string message = "No autorizado")
+    {
+        return new ApiResponse
+        {
+            Success = false,
+            Message = message,
+            Errors = new List<string> { message }
         };
     }
 }

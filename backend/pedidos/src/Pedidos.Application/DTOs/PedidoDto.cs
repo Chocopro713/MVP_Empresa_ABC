@@ -34,5 +34,6 @@ public record CreateItemPedidoDto(
 
 public record UpdatePedidoDto(
     string Estado,
-    string DireccionEnvio
+    string DireccionEnvio,
+    List<CreateItemPedidoDto>? NuevosItems = null
 );

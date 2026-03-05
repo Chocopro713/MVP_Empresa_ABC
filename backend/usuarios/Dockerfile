@@ -12,7 +12,7 @@ RUN dotnet restore src/Usuarios.API/Usuarios.API.csproj
 
 # Copy everything and build
 COPY . .
-RUN dotnet publish src/Usuarios.API/Usuarios.API.csproj -c Release -o /app/publish --no-restore
+RUN dotnet publish src/Usuarios.API/Usuarios.API.csproj -c Release -o /app/publish
 
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime

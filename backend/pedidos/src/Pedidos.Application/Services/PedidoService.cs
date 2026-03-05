@@ -82,6 +82,23 @@ public class PedidoService : IPedidoService
         pedido.DireccionEnvio = dto.DireccionEnvio;
         pedido.FechaActualizacion = DateTime.UtcNow;
 
+        // Solo permitir agregar items si el pedido está en estado Pendiente
+        if (dto.NuevosItems != null && dto.NuevosItems.Count > 0 && pedido.Estado == "Pendiente")
+        {
+            _logger.LogInformation("Agregando {Count} nuevos items al pedido {Id}", dto.NuevosItems.Count, id);
+            
+            var nuevosItems = dto.NuevosItems.Select(i => new ItemPedido
+            {
+                ProductoId = i.ProductoId,
+                Nombre = i.Nombre,
+                Cantidad = i.Cantidad,
+                PrecioUnitario = i.PrecioUnitario
+            }).ToList();
+
+            pedido.Items.AddRange(nuevosItems);
+            pedido.Total = pedido.Items.Sum(i => i.Subtotal);
+        }
+
         return await _repository.UpdateAsync(pedido);
     }
 

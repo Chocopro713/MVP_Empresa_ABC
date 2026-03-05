@@ -1,6 +1,10 @@
 using System.Reflection;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using Usuarios.Application.Interfaces;
 using Usuarios.Application.Services;
+using Usuarios.Application.Settings;
 using Usuarios.Domain.Interfaces;
 using Usuarios.Infrastructure.Data;
 using Usuarios.Infrastructure.Repositories;
@@ -20,6 +24,9 @@ Log.Logger = new LoggerConfiguration()
 
 builder.Host.UseSerilog();
 
+// JWT Settings
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
+
 // MongoDB Settings
 builder.Services.Configure<MongoDbSettings>(options =>
 {
@@ -33,16 +40,55 @@ builder.Services.Configure<MongoDbSettings>(options =>
 builder.Services.AddSingleton<MongoDbContext>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+
+// JWT Authentication
+var jwtSettings = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>() 
+    ?? new JwtSettings();
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings.Issuer,
+        ValidAudience = jwtSettings.Audience,
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(jwtSettings.SecretKey)),
+        ClockSkew = TimeSpan.Zero // No tolerancia de tiempo
+    };
+    
+    options.Events = new JwtBearerEvents
+    {
+        OnAuthenticationFailed = context =>
+        {
+            if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
+            {
+                context.Response.Headers.Append("Token-Expired", "true");
+            }
+            return Task.CompletedTask;
+        }
+    };
+});
+
+builder.Services.AddAuthorization();
 
 // Controllers
 builder.Services.AddControllers()
     .ConfigureApiBehaviorOptions(options =>
     {
-        // Suprimir la respuesta automática de validación para usar nuestro formato
         options.SuppressModelStateInvalidFilter = true;
     });
 
-// Swagger
+// Swagger con soporte JWT
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -50,11 +96,36 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "Usuarios API",
         Version = "v1",
-        Description = "Microservicio de gestión de usuarios",
+        Description = "Microservicio de gestión de usuarios con autenticación JWT",
         Contact = new()
         {
             Name = "ABC Team",
             Email = "dev@abc.com"
+        }
+    });
+    
+    // Configuración de seguridad JWT para Swagger
+    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header usando el esquema Bearer. Ejemplo: \"Authorization: Bearer {token}\"",
+        Name = "Authorization",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+    
+    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
         }
     });
     
@@ -81,7 +152,8 @@ builder.Services.AddCors(options =>
     {
         policy.AllowAnyOrigin()
               .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowAnyHeader()
+              .WithExposedHeaders("Token-Expired"); // Exponer header personalizado
     });
 });
 
@@ -100,6 +172,9 @@ app.UseSwaggerUI(c =>
 app.UseCors("AllowAll");
 
 app.UseRouting();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 

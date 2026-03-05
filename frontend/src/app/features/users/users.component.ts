@@ -41,7 +41,7 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
       <div class="header">
         <div class="title-section">
           <h1>Usuarios</h1>
-          <p class="subtitle">Datos desde MongoDB - API Usuarios (Puerto 5001)</p>
+          <p class="subtitle">Gestión de usuarios del sistema</p>
         </div>
         <div class="actions-section">
           @if (authService.userRole() === 'admin') {
@@ -52,27 +52,29 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
         </div>
       </div>
 
-      <!-- Barra de búsqueda -->
-      <div class="search-section">
-        <mat-form-field appearance="outline" class="search-field">
-          <mat-label>Buscar usuarios</mat-label>
-          <input matInput 
-                 [(ngModel)]="searchTerm" 
-                 (ngModelChange)="onSearchChange($event)"
-                 placeholder="Buscar por nombre, email, teléfono o rol...">
-          <mat-icon matSuffix>search</mat-icon>
-          @if (searchTerm) {
-            <button matSuffix mat-icon-button (click)="clearSearch()">
-              <mat-icon>close</mat-icon>
-            </button>
-          }
-        </mat-form-field>
-        <span class="results-count">{{ displayUsers().length }} resultado(s)</span>
-      </div>
+      <!-- Barra de búsqueda (solo admin) -->
+      @if (authService.userRole() === 'admin') {
+        <div class="search-section">
+          <mat-form-field appearance="outline" class="search-field">
+            <mat-label>Buscar usuarios</mat-label>
+            <input matInput 
+                   [(ngModel)]="searchTerm" 
+                   (ngModelChange)="onSearchChange($event)"
+                   placeholder="Buscar por nombre, email, teléfono o rol...">
+            <mat-icon matSuffix>search</mat-icon>
+            @if (searchTerm) {
+              <button matSuffix mat-icon-button (click)="clearSearch()">
+                <mat-icon>close</mat-icon>
+              </button>
+            }
+          </mat-form-field>
+          <span class="results-count">{{ displayUsers().length }} resultado(s)</span>
+        </div>
+      }
 
       @if (authService.userRole() !== 'admin') {
         <mat-chip-set class="access-warning">
-          <mat-chip color="warn">Acceso limitado - Solo lectura</mat-chip>
+          <mat-chip color="accent">Vista limitada - Mostrando primeros 3 registros</mat-chip>
         </mat-chip-set>
       }
       
@@ -158,8 +160,7 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
                   <mat-label>Rol</mat-label>
                   <mat-select formControlName="rol">
                     <mat-option value="Usuario">Usuario</mat-option>
-                    <mat-option value="Admin">Admin</mat-option>
-                    <mat-option value="Moderador">Moderador</mat-option>
+                    <mat-option value="Administrador">Administrador</mat-option>
                   </mat-select>
                 </mat-form-field>
 
@@ -262,31 +263,49 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
     .users-container {
       max-width: 1200px;
       margin: 0 auto;
+      animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
     
     .header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
       flex-wrap: wrap;
       gap: 16px;
+      padding: 20px 24px;
+      background: var(--bg-card);
+      border-radius: 16px;
+      border: 1px solid var(--border-color);
     }
 
     .title-section h1 {
       margin-bottom: 4px;
+      color: var(--text-primary);
+      font-size: 24px;
+      font-weight: 600;
     }
     
     .subtitle {
-      color: #666;
+      color: var(--text-secondary);
       margin: 0;
+      font-size: 14px;
     }
 
     .search-section {
       display: flex;
       align-items: center;
       gap: 16px;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
+      padding: 16px 20px;
+      background: var(--bg-card);
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
     }
 
     .search-field {
@@ -295,7 +314,7 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
     }
 
     .results-count {
-      color: #666;
+      color: var(--text-secondary);
       font-size: 14px;
     }
 
@@ -305,7 +324,10 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 
     .form-card {
       margin-bottom: 24px;
-      padding: 16px;
+      padding: 20px;
+      border-radius: 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
     }
 
     .user-form {
@@ -325,33 +347,38 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 48px;
+      padding: 60px;
       gap: 16px;
+      color: var(--text-secondary);
     }
     
     .error mat-icon, .no-data mat-icon {
       font-size: 64px;
       width: 64px;
       height: 64px;
-      color: #999;
+      color: var(--text-disabled);
     }
     
     .users-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
       gap: 20px;
     }
     
     .user-card {
-      transition: transform 0.2s, opacity 0.2s;
+      transition: all 0.3s ease;
+      border-radius: 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
     }
     
     .user-card:hover {
       transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
     }
 
     .user-card.inactive {
-      opacity: 0.7;
+      opacity: 0.6;
     }
     
     .avatar {
@@ -360,11 +387,11 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 20px;
-      font-weight: 500;
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
+      font-size: 18px;
+      font-weight: 600;
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
     }
     
     .avatar.admin {
@@ -380,21 +407,21 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
       align-items: center;
       gap: 8px;
       margin: 8px 0;
-      color: #666;
+      color: var(--text-secondary);
     }
     
     .info-row mat-icon {
       font-size: 18px;
       width: 18px;
       height: 18px;
-      color: #999;
+      color: var(--text-disabled);
     }
 
     .server-errors {
       grid-column: 1 / -1;
-      background-color: #ffebee;
-      border: 1px solid #f44336;
-      border-radius: 4px;
+      background-color: rgba(244, 67, 54, 0.1);
+      border: 1px solid var(--accent-red);
+      border-radius: 8px;
       padding: 12px;
       display: flex;
       flex-direction: column;
@@ -402,8 +429,27 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
     }
 
     .server-errors mat-error {
-      color: #c62828;
+      color: var(--accent-red);
       font-size: 14px;
+    }
+    
+    @media (max-width: 768px) {
+      .header {
+        flex-direction: column;
+      }
+      
+      .search-section {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .search-field {
+        max-width: none;
+      }
+      
+      .users-grid {
+        grid-template-columns: 1fr;
+      }
     }
   `]
 })

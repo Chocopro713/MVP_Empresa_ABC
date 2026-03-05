@@ -42,7 +42,7 @@ import { debounceTime, distinctUntilChanged, Subject, forkJoin } from 'rxjs';
       <div class="header">
         <div class="title-section">
           <h1>Pagos</h1>
-          <p class="subtitle">Datos desde MongoDB - API Pagos (Puerto 5003)</p>
+          <p class="subtitle">Gestión de pagos y transacciones</p>
         </div>
         <div class="actions-section">
           @if (authService.userRole() === 'admin') {
@@ -53,23 +53,29 @@ import { debounceTime, distinctUntilChanged, Subject, forkJoin } from 'rxjs';
         </div>
       </div>
 
-      <!-- Barra de búsqueda -->
-      <div class="search-section">
-        <mat-form-field appearance="outline" class="search-field">
-          <mat-label>Buscar pagos</mat-label>
-          <input matInput 
-                 [(ngModel)]="searchTerm" 
-                 (ngModelChange)="onSearchChange($event)"
-                 placeholder="Buscar por transacción, estado, método de pago...">
-          <mat-icon matSuffix>search</mat-icon>
-          @if (searchTerm) {
-            <button matSuffix mat-icon-button (click)="clearSearch()">
-              <mat-icon>close</mat-icon>
-            </button>
-          }
-        </mat-form-field>
-        <span class="results-count">{{ pagos().length }} resultado(s)</span>
-      </div>
+      <!-- Barra de búsqueda (solo admin) -->
+      @if (authService.userRole() === 'admin') {
+        <div class="search-section">
+          <mat-form-field appearance="outline" class="search-field">
+            <mat-label>Buscar pagos</mat-label>
+            <input matInput 
+                   [(ngModel)]="searchTerm" 
+                   (ngModelChange)="onSearchChange($event)"
+                   placeholder="Buscar por transacción, estado, método de pago...">
+            <mat-icon matSuffix>search</mat-icon>
+            @if (searchTerm) {
+              <button matSuffix mat-icon-button (click)="clearSearch()">
+                <mat-icon>close</mat-icon>
+              </button>
+            }
+          </mat-form-field>
+          <span class="results-count">{{ displayPagos().length }} resultado(s)</span>
+        </div>
+      } @else {
+        <mat-chip-set class="access-warning">
+          <mat-chip color="accent">Mostrando tus pagos</mat-chip>
+        </mat-chip-set>
+      }
       
       @if (loading()) {
         <div class="loading">
@@ -173,7 +179,7 @@ import { debounceTime, distinctUntilChanged, Subject, forkJoin } from 'rxjs';
         }
 
         <div class="pagos-grid">
-          @for (pago of pagos(); track pago.id) {
+          @for (pago of displayPagos(); track pago.id) {
             <mat-card class="pago-card">
               <mat-card-header>
                 <mat-icon mat-card-avatar class="pago-icon" [class]="getEstadoClass(pago.estado)">
@@ -235,7 +241,7 @@ import { debounceTime, distinctUntilChanged, Subject, forkJoin } from 'rxjs';
           }
         </div>
         
-        @if (pagos().length === 0) {
+        @if (displayPagos().length === 0) {
           <div class="no-data">
             <mat-icon>payment</mat-icon>
             <p>{{ searchTerm ? 'No se encontraron pagos con ese criterio' : 'No hay pagos registrados' }}</p>
@@ -251,31 +257,49 @@ import { debounceTime, distinctUntilChanged, Subject, forkJoin } from 'rxjs';
     .pagos-container {
       max-width: 1200px;
       margin: 0 auto;
+      animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
     
     .header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
       flex-wrap: wrap;
       gap: 16px;
+      padding: 20px 24px;
+      background: var(--bg-card);
+      border-radius: 16px;
+      border: 1px solid var(--border-color);
     }
 
     .title-section h1 {
       margin-bottom: 4px;
+      color: var(--text-primary);
+      font-size: 24px;
+      font-weight: 600;
     }
     
     .subtitle {
-      color: #666;
+      color: var(--text-secondary);
       margin: 0;
+      font-size: 14px;
     }
 
     .search-section {
       display: flex;
       align-items: center;
       gap: 16px;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
+      padding: 16px 20px;
+      background: var(--bg-card);
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
     }
 
     .search-field {
@@ -284,13 +308,20 @@ import { debounceTime, distinctUntilChanged, Subject, forkJoin } from 'rxjs';
     }
 
     .results-count {
-      color: #666;
+      color: var(--text-secondary);
       font-size: 14px;
+    }
+
+    .access-warning {
+      margin-bottom: 16px;
     }
 
     .form-card {
       margin-bottom: 24px;
-      padding: 16px;
+      padding: 20px;
+      border-radius: 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
     }
 
     .pago-form {
@@ -305,20 +336,21 @@ import { debounceTime, distinctUntilChanged, Subject, forkJoin } from 'rxjs';
 
     .pedido-info {
       grid-column: 1 / -1;
-      background: #f5f5f5;
+      background: var(--bg-secondary);
       padding: 16px;
-      border-radius: 8px;
+      border-radius: 12px;
       border-left: 4px solid #667eea;
     }
 
     .pedido-info h4 {
       margin: 0 0 12px 0;
-      color: #333;
+      color: var(--text-primary);
+      font-weight: 600;
     }
 
     .pedido-info p {
       margin: 4px 0;
-      color: #666;
+      color: var(--text-secondary);
     }
 
     .form-actions {
@@ -332,29 +364,34 @@ import { debounceTime, distinctUntilChanged, Subject, forkJoin } from 'rxjs';
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 48px;
+      padding: 60px;
       gap: 16px;
+      color: var(--text-secondary);
     }
     
     .error mat-icon, .no-data mat-icon {
       font-size: 64px;
       width: 64px;
       height: 64px;
-      color: #999;
+      color: var(--text-disabled);
     }
     
     .pagos-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
       gap: 20px;
     }
     
     .pago-card {
-      transition: transform 0.2s;
+      transition: all 0.3s ease;
+      border-radius: 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
     }
     
     .pago-card:hover {
       transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
     }
     
     .pago-icon {
@@ -364,9 +401,9 @@ import { debounceTime, distinctUntilChanged, Subject, forkJoin } from 'rxjs';
       align-items: center;
       justify-content: center;
       font-size: 24px;
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
     }
     
     .pago-icon.completado {
@@ -383,21 +420,21 @@ import { debounceTime, distinctUntilChanged, Subject, forkJoin } from 'rxjs';
     
     .amount {
       text-align: center;
-      padding: 16px;
+      padding: 20px;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border-radius: 8px;
+      border-radius: 12px;
       margin: 12px 0;
       color: white;
     }
     
     .amount .currency {
       font-size: 14px;
-      opacity: 0.8;
+      opacity: 0.85;
     }
     
     .amount .value {
-      font-size: 28px;
-      font-weight: 600;
+      font-size: 32px;
+      font-weight: 700;
       margin-left: 4px;
     }
     
@@ -406,22 +443,41 @@ import { debounceTime, distinctUntilChanged, Subject, forkJoin } from 'rxjs';
       align-items: center;
       gap: 8px;
       margin: 8px 0;
-      color: #666;
+      color: var(--text-secondary);
     }
     
     .info-row.processed {
-      color: #2e7d32;
+      color: var(--accent-green);
     }
     
     .info-row mat-icon {
       font-size: 18px;
       width: 18px;
       height: 18px;
-      color: #999;
+      color: var(--text-disabled);
     }
     
     .info-row.processed mat-icon {
-      color: #2e7d32;
+      color: var(--accent-green);
+    }
+    
+    @media (max-width: 768px) {
+      .header {
+        flex-direction: column;
+      }
+      
+      .search-section {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .search-field {
+        max-width: none;
+      }
+      
+      .pagos-grid {
+        grid-template-columns: 1fr;
+      }
     }
   `]
 })
@@ -443,6 +499,20 @@ export class PagosComponent implements OnInit {
   searchTerm = '';
   
   private searchSubject = new Subject<string>();
+
+  // Computed para mostrar pagos filtrados por usuario (si no es admin)
+  displayPagos = computed(() => {
+    const allPagos = this.pagos();
+    const isAdmin = this.authService.userRole() === 'admin';
+    const currentUserId = this.authService.usuarioId();
+    
+    if (isAdmin) {
+      return allPagos;
+    }
+    
+    // Filtrar pagos del usuario actual
+    return allPagos.filter(pago => pago.usuarioId === currentUserId);
+  });
 
   // Filtrar solo pedidos pendientes
   pedidosPendientes = computed(() => {

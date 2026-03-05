@@ -34,11 +34,52 @@ export interface AuthUser {
   username: string;
   role: 'admin' | 'usuario';
   token: string;
+  refreshToken: string;
+  expiration: Date;
 }
 
 export interface LoginCredentials {
   username: string;
   password: string;
+}
+
+// ============ DTOs de Autenticación JWT ============
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface RegisterRequest {
+  nombre: string;
+  email: string;
+  password: string;
+  telefono: string;
+  direccion?: string;
+}
+
+export interface AuthResponse {
+  token: string;
+  refreshToken: string;
+  expiration: string;
+  usuario: UsuarioAuth;
+}
+
+export interface UsuarioAuth {
+  id: string;
+  nombre: string;
+  email: string;
+  rol: string;
+}
+
+export interface RefreshTokenRequest {
+  token: string;
+  refreshToken: string;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
 }
 
 // ============ MODELOS PARA APIs REALES ============
@@ -111,6 +152,7 @@ export interface CreateItemPedido {
 export interface UpdatePedido {
   estado: string;
   direccionEnvio: string;
+  nuevosItems?: CreateItemPedido[];
 }
 
 // Pago del microservicio

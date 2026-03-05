@@ -197,27 +197,113 @@ Utilizar Angular 19 con arquitectura de componentes standalone.
 
 ---
 
-## ADR-008: Autenticación Simulada
+## ADR-008: Autenticación JWT
 
 ### Estado
-Aceptado
+Implementado ✅
 
 ### Contexto
-Para el MVP no se implementará un sistema de autenticación real.
+El sistema requiere autenticación segura para proteger los endpoints y gestionar sesiones de usuario.
 
 ### Decisión
-Implementar autenticación simulada con roles hardcodeados.
+Implementar autenticación JWT Bearer con refresh tokens.
+
+### Componentes Implementados
+
+#### Backend (Usuarios API)
+- **JWT Bearer**: Tokens con expiración de 1 hora
+- **Refresh Tokens**: Tokens de 7 días almacenados en MongoDB
+- **BCrypt**: Hash seguro de contraseñas (cost factor 12)
+- **Bloqueo de cuenta**: 5 intentos fallidos = 15 min bloqueo
+
+#### Frontend (Angular)
+- **HTTP Interceptor**: Inyección automática del header `Authorization: Bearer {token}`
+- **Auto-refresh**: Renovación transparente cuando el token expira
+- **Guards**: Protección de rutas basada en autenticación y roles
+
+### Endpoints de Autenticación
+```
+POST /api/auth/login      → JWT + Refresh Token
+POST /api/auth/register   → Crear cuenta + JWT
+POST /api/auth/refresh    → Renovar JWT
+POST /api/auth/logout     → Invalidar refresh token
+GET  /api/auth/me         → Usuario actual
+```
+
+### Estructura del Token JWT
+```json
+{
+  "sub": "user_id",
+  "email": "usuario@ejemplo.com",
+  "nombre": "Juan Pérez",
+  "rol": "admin",
+  "exp": 1709492400,
+  "iss": "NexosABC",
+  "aud": "NexosABC-Frontend"
+}
+```
 
 ### Roles Definidos
 | Rol | Permisos |
 |-----|----------|
 | Admin | Acceso completo a todas las funcionalidades |
-| Usuario | Acceso limitado (primeros 3 ítems) |
+| Usuario | Acceso limitado, solo sus propios recursos |
 
-### Evolución Futura
-- Integrar con Identity Server
-- Implementar OAuth 2.0 / OpenID Connect
-- JWT con refresh tokens
+### Validaciones de Contraseña
+- Mínimo 6 caracteres
+- Al menos una mayúscula
+- Al menos una minúscula
+- Al menos un número
+
+---
+
+## ADR-012: API Gateway con YARP
+
+### Estado
+Implementado ✅
+
+### Contexto
+Se necesita un punto de entrada único para todas las APIs que facilite el manejo de rutas, CORS y futura implementación de rate limiting.
+
+### Decisión
+Implementar API Gateway usando YARP (Yet Another Reverse Proxy) de Microsoft.
+
+### Configuración
+```json
+{
+  "ReverseProxy": {
+    "Routes": {
+      "usuarios-route": {
+        "ClusterId": "usuarios-cluster",
+        "Match": { "Path": "/api/usuarios/{**catch-all}" }
+      },
+      "pedidos-route": {
+        "ClusterId": "pedidos-cluster",
+        "Match": { "Path": "/api/pedidos/{**catch-all}" }
+      },
+      "pagos-route": {
+        "ClusterId": "pagos-cluster",
+        "Match": { "Path": "/api/pagos/{**catch-all}" }
+      },
+      "auth-route": {
+        "ClusterId": "usuarios-cluster",
+        "Match": { "Path": "/api/auth/{**catch-all}" }
+      }
+    }
+  }
+}
+```
+
+### Beneficios
+- Punto de entrada único (puerto 5050)
+- Simplifica configuración de CORS
+- Facilita balanceo de carga futuro
+- Middleware centralizado para logging y errores
+- Compatible con .NET 9
+
+### Middleware Implementado
+- **ErrorHandlingMiddleware**: Captura excepciones y retorna ApiResponse consistente
+- **RequestLoggingMiddleware**: Logs de todas las peticiones
 
 ---
 
@@ -352,11 +438,15 @@ graph LR
         B[Angular SPA]
         B1[Auth Guard]
         B2[Role Guard]
-        B3[HTTP Interceptor]
+        B3[JWT Interceptor]
+    end
+    
+    subgraph Gateway
+        GW[API Gateway<br/>YARP :5050]
     end
     
     subgraph Backend
-        C[Usuarios API]
+        C[Usuarios API<br/>+ Auth]
         D[Pedidos API]
         E[Pagos API]
     end
@@ -375,10 +465,11 @@ graph LR
     B --> B1
     B1 --> B2
     B2 --> B3
-    B3 --> C
-    B3 --> D
-    B3 --> E
-    B3 --> F
+    B3 --> GW
+    GW --> C
+    GW --> D
+    GW --> E
+    B3 -.-> F
     C --> G
     D --> H
     E --> I
@@ -386,29 +477,40 @@ graph LR
 
 ---
 
-## Diagrama de Secuencia - Flujo de Login
+## Diagrama de Secuencia - Flujo de Login JWT
 
 ```mermaid
 sequenceDiagram
     participant U as Usuario
     participant F as Frontend
-    participant G as Guards
-    participant A as Auth Service
-    participant S as Storage
+    participant I as JWT Interceptor
+    participant GW as API Gateway
+    participant A as Usuarios API
+    participant DB as MongoDB
     
     U->>F: Ingresa credenciales
-    F->>A: login(credentials)
-    A->>A: Validar credenciales
-    A->>S: Guardar token/user
-    A-->>F: Usuario autenticado
-    F->>G: Navegar a /dashboard
-    G->>A: isAuthenticated()
-    A->>S: Obtener token
-    S-->>A: Token válido
-    A-->>G: true
-    G->>G: checkRole()
-    G-->>F: Acceso permitido
-    F-->>U: Dashboard según rol
+    F->>GW: POST /api/auth/login
+    GW->>A: Forward request
+    A->>DB: Buscar usuario por email
+    DB-->>A: Usuario encontrado
+    A->>A: Verificar password (BCrypt)
+    A->>A: Generar JWT + Refresh Token
+    A->>DB: Guardar refresh token
+    A-->>GW: Tokens + Usuario
+    GW-->>F: 200 OK
+    F->>F: Guardar tokens en localStorage
+    F-->>U: Redirigir a Dashboard
+    
+    Note over F,A: Peticiones subsecuentes
+    U->>F: Acción en app
+    F->>I: HTTP Request
+    I->>I: Agregar header Authorization
+    I->>GW: Request + Bearer Token
+    GW->>A: Forward + Token
+    A->>A: Validar JWT
+    A-->>GW: Response
+    GW-->>F: Response
+    F-->>U: Mostrar datos
 ```
 
 ---
@@ -442,14 +544,26 @@ sequenceDiagram
 - [x] Formularios reactivos con validación
 - [x] Selección de usuario en pedidos
 
-### Fase 2 (Próxima)
-- [ ] API Gateway (Kong/Ocelot)
-- [ ] Autenticación real (JWT)
-- [ ] Circuit Breaker
-- [ ] Distributed Tracing
+### Fase 2 (Actual) ✅
+- [x] API Gateway (YARP)
+- [x] Autenticación JWT real
+- [x] Refresh Tokens
+- [x] Password Hashing (BCrypt)
+- [x] Bloqueo por intentos fallidos
+- [x] HTTP Interceptor con auto-refresh
+- [x] Tema oscuro/claro
+- [x] UI/UX mejorada con Angular Material
+- [x] Barra de búsqueda en administración
 
-### Fase 3 (Futura)
-- [ ] Event-Driven Architecture
+### Fase 3 (Próxima)
+- [ ] Circuit Breaker
+- [ ] Distributed Tracing (Jaeger/Zipkin)
+- [ ] Rate Limiting en Gateway
+- [ ] Caché distribuido (Redis)
+- [ ] Tests de integración
+
+### Fase 4 (Futura)
+- [ ] Event-Driven Architecture (RabbitMQ)
 - [ ] CQRS por servicio
 - [ ] Kubernetes
-- [ ] Service Mesh
+- [ ] Service Mesh (Istio)

@@ -2,15 +2,21 @@ sequenceDiagram
     autonumber
     participant U as Usuario
     participant F as Frontend<br/>(Angular 19)
-    participant G as Guards
-    participant API as REST APIs
+    participant G as API Gateway<br/>(YARP :5050)
+    participant Auth as Usuarios API<br/>(JWT Auth)
+    participant API as Microservices
     participant DB as MongoDB
 
     rect rgb(240, 248, 255)
-        Note over U,F: Flujo de Login
+        Note over U,Auth: Flujo de Autenticación JWT
         U->>F: Ingresar credenciales
         F->>F: Validar formulario reactivo
-        F->>F: Autenticar (simulado)
+        F->>G: POST /api/auth/login
+        G->>Auth: Forward request
+        Auth->>DB: Verificar credenciales
+        Auth->>Auth: Generar JWT + Refresh Token
+        Auth-->>G: Tokens + Usuario
+        G-->>F: 200 OK + Tokens
         F->>F: Guardar en localStorage
         F-->>U: Redirigir a Dashboard
     end
@@ -19,33 +25,53 @@ sequenceDiagram
         Note over U,DB: Flujo CRUD con Validaciones
         U->>F: Crear usuario
         F->>F: Validar Reactive Forms
-        F->>API: POST /api/usuarios
+        F->>G: POST /api/usuarios<br/>[Authorization: Bearer JWT]
+        G->>API: Forward + Validate JWT
         API->>API: Validar DataAnnotations
         API->>DB: Verificar unicidad email
         alt Email duplicado
-            API-->>F: 409 Conflict
+            API-->>G: 409 Conflict
+            G-->>F: ApiResponse con error
             F-->>U: Mostrar error específico
         else Email único
             API->>DB: Insertar documento
             DB-->>API: OK
-            API-->>F: 201 ApiResponse
+            API-->>G: 201 ApiResponse
+            G-->>F: Forward response
             F-->>U: Mostrar éxito
         end
     end
 
     rect rgb(240, 255, 240)
-        Note over F,DB: Flujo de Pago Simulado
+        Note over F,DB: Flujo de Pago
         U->>F: Click "Pagar Pedido"
         F->>F: Mostrar modal
         U->>F: Confirmar pago
-        F->>API: POST /api/pagos
+        F->>G: POST /api/pagos
+        G->>API: Forward request
         API->>DB: Crear pago
         DB-->>API: OK
-        API-->>F: 201 Pago creado
-        F->>API: PUT /api/pedidos/{id}
+        API-->>G: 201 Pago creado
+        G-->>F: Forward response
+        F->>G: PUT /api/pedidos/{id}
         Note right of F: Estado = PAGADO
+        G->>API: Forward request
         API->>DB: Actualizar pedido
         DB-->>API: OK
-        API-->>F: 200 ApiResponse
+        API-->>G: 200 ApiResponse
+        G-->>F: Forward response
         F-->>U: Pedido pagado
+    end
+
+    rect rgb(255, 240, 245)
+        Note over F,Auth: Flujo de Refresh Token
+        F->>F: JWT expirado
+        F->>G: POST /api/auth/refresh
+        G->>Auth: Forward request
+        Auth->>DB: Validar refresh token
+        Auth->>Auth: Generar nuevo JWT
+        Auth-->>G: Nuevo JWT
+        G-->>F: 200 OK + Token
+        F->>F: Actualizar localStorage
+        F->>G: Reintentar request original
     end

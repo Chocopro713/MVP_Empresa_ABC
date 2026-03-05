@@ -11,6 +11,14 @@ Sistema MVP de gestión de pedidos desarrollado con arquitectura de microservici
 
 ## ✨ Características Principales
 
+### 🔐 Autenticación JWT (Fase 2)
+- **JWT Bearer Authentication**: Tokens seguros con expiración configurable
+- **Refresh Tokens**: Renovación automática de sesión sin re-login
+- **BCrypt Password Hashing**: Contraseñas almacenadas de forma segura
+- **Bloqueo por Intentos Fallidos**: Protección contra ataques de fuerza bruta (5 intentos, 15 min bloqueo)
+- **Validación de Contraseñas**: Requisitos de complejidad (mayúscula, minúscula, número)
+- **Logout Seguro**: Invalidación de refresh tokens en el servidor
+
 ### Backend
 - **Respuesta Estándar API**: Formato unificado `ApiResponse<T>` con success, message, data, errors y timestamp
 - **Validaciones Robustas**: DataAnnotations en DTOs + validaciones de negocio en servicios
@@ -20,7 +28,10 @@ Sistema MVP de gestión de pedidos desarrollado con arquitectura de microservici
 
 ### Frontend
 - **CRUD Completo**: Gestión de Usuarios, Pedidos y Pagos
+- **Dashboard en Tiempo Real**: Estadísticas conectadas a las APIs reales
 - **Formularios Reactivos**: Validaciones en tiempo real con Angular Reactive Forms
+- **Interceptor HTTP con JWT**: Inyección automática de tokens en todas las peticiones
+- **Refresh Token Automático**: Renovación transparente de sesión
 - **Simulación de Pagos**: Flujo completo de pago de pedidos (PENDIENTE → PAGADO)
 - **Búsqueda con Debounce**: Filtrado eficiente en todas las listas
 - **Selección de Usuario en Pedidos**: Lista desplegable al crear pedidos
@@ -35,12 +46,12 @@ graph TB
         A[Angular 19 SPA]
     end
     
-    subgraph API Gateway Layer
-        B[Nginx / Direct Access]
+    subgraph API Gateway
+        B[.NET 9 YARP<br/>Port: 5050]
     end
     
     subgraph Microservices
-        C[Usuarios API<br/>.NET 9]
+        C[Usuarios API<br/>.NET 9 + JWT]
         D[Pedidos API<br/>.NET 9]
         E[Pagos API<br/>.NET 9]
     end
@@ -60,6 +71,7 @@ graph TB
     E --> H
     
     style A fill:#DD0031
+    style B fill:#512BD4
     style C fill:#512BD4
     style D fill:#512BD4
     style E fill:#512BD4
@@ -128,6 +140,12 @@ graph TB
 │   └── Dockerfile
 │
 ├── backend/
+│   ├── gateway/                # API Gateway (YARP)
+│   │   ├── Gateway.API/
+│   │   │   ├── Middleware/     # Error Handling, Logging
+│   │   │   └── Program.cs
+│   │   └── Dockerfile
+│   │
 │   ├── usuarios/               # Microservicio de Usuarios
 │   │   ├── src/
 │   │   │   ├── Usuarios.Domain/
@@ -186,24 +204,45 @@ docker-compose up --build -d
 | Servicio | URL | Descripción |
 |----------|-----|-------------|
 | **Frontend** | http://localhost:4200 | Angular SPA |
-| **Usuarios API** | http://localhost:5001/swagger | Swagger UI |
-| **Pedidos API** | http://localhost:5002/swagger | Swagger UI |
-| **Pagos API** | http://localhost:5003/swagger | Swagger UI |
+| **API Gateway** | http://localhost:5050 | Punto de entrada único |
+| **Usuarios API** | http://localhost:5001/swagger | Swagger UI (directo) |
+| **Pedidos API** | http://localhost:5002/swagger | Swagger UI (directo) |
+| **Pagos API** | http://localhost:5003/swagger | Swagger UI (directo) |
 
-### Credenciales de Prueba
+> 💡 **Nota**: El frontend se comunica exclusivamente con el API Gateway (puerto 5050), que enruta las peticiones a los microservicios correspondientes.
 
-| Usuario | Contraseña | Rol |
-|---------|------------|-----|
-| admin | admin123 | Admin (acceso completo) |
-| usuario | user123 | Usuario (acceso limitado) |
+### Credenciales de Prueba (JWT)
+
+Para crear los usuarios de prueba, ejecuta el endpoint de seed:
+```bash
+curl -X POST http://localhost:5001/api/seed/usuarios
+```
+
+| Usuario | Email | Contraseña | Rol |
+|---------|-------|------------|-----|
+| Admin Sistema | admin@nexos.com | Admin123! | Admin (acceso completo) |
+| Juan Pérez | juan@example.com | Juan123! | Usuario |
+| María García | maria@example.com | Maria123! | Usuario |
+| Carlos López | carlos@example.com | Carlos123! | Usuario |
+| Ana Martínez | ana@example.com | Ana12345! | Usuario |
+
+> ⚠️ **Nota**: Las contraseñas deben cumplir: mínimo 6 caracteres, al menos una mayúscula, una minúscula y un número.
 
 ### Health Checks
 
 ```bash
-# Verificar estado de los servicios
+# Verificar estado del API Gateway
+curl http://localhost:5050/health
+
+# Verificar estado de los microservicios (directo)
 curl http://localhost:5001/health
 curl http://localhost:5002/health
 curl http://localhost:5003/health
+
+# O a través del Gateway
+curl http://localhost:5050/api/usuarios/health
+curl http://localhost:5050/api/pedidos/health
+curl http://localhost:5050/api/pagos/health
 ```
 
 ## 🔌 API Externa Integrada
@@ -259,6 +298,26 @@ docker-compose up --build usuarios-api
 ```
 
 ## 📊 Endpoints por Servicio
+
+### API Gateway (Puerto 5050)
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | /health | Health check del Gateway |
+| * | /api/usuarios/* | Proxy a Usuarios API |
+| * | /api/pedidos/* | Proxy a Pedidos API |
+| * | /api/pagos/* | Proxy a Pagos API |
+| * | /api/auth/* | Proxy a Auth (Usuarios API) |
+
+### Autenticación (Puerto 5050 vía Gateway)
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| POST | /api/auth/login | Iniciar sesión (retorna JWT) |
+| POST | /api/auth/register | Registrar nuevo usuario |
+| POST | /api/auth/refresh | Renovar token JWT |
+| POST | /api/auth/logout | Cerrar sesión |
+| GET | /api/auth/me | Obtener usuario actual |
 
 ### Usuarios API (Puerto 5001)
 
@@ -353,24 +412,29 @@ cd frontend && npm test
 - Indicadores visuales de campos inválidos
 - Botón submit deshabilitado si hay errores
 
-## 🎯 Flujo de Simulación de Pago
+## 🎯 Flujo de Pago
 
 ```mermaid
 sequenceDiagram
     participant U as Usuario
     participant F as Frontend
+    participant GW as API Gateway
     participant P as Pedidos API
     participant G as Pagos API
     
     U->>F: Click "Pagar Pedido"
     F->>F: Mostrar modal de pago
     U->>F: Seleccionar método y confirmar
-    F->>G: POST /api/pagos
+    F->>GW: POST /api/pagos
+    GW->>G: Forward request
     G->>G: Crear registro de pago
-    G-->>F: Pago creado
-    F->>P: PUT /api/pedidos/{id}
-    F->>P: Estado = "PAGADO"
-    P-->>F: Pedido actualizado
+    G-->>GW: Pago creado
+    GW-->>F: 201 Created
+    F->>GW: PUT /api/pedidos/{id}
+    GW->>P: Forward request
+    P->>P: Estado = "PAGADO"
+    P-->>GW: Pedido actualizado
+    GW-->>F: 200 OK
     F-->>U: Confirmación visual
 ```
 

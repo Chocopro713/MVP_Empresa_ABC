@@ -1,10 +1,14 @@
 graph TB
+    subgraph Gateway["🚪 API Gateway (YARP)"]
+        GW[Gateway API<br/>───────────<br/>Reverse Proxy<br/>Request Routing<br/>Port: 5050]
+    end
+
     subgraph Usuarios["📦 Usuarios Microservice"]
         direction TB
-        UA[API Layer<br/>Controllers + ApiResponse<br/>DataAnnotations Validation]
-        UApp[Application Layer<br/>Services + ServiceResult<br/>Business Validation]
+        UA[API Layer<br/>Controllers + ApiResponse<br/>JWT Authentication]
+        UApp[Application Layer<br/>AuthService + UserService<br/>Password Hashing]
         UD[Domain Layer<br/>Entities & Interfaces]
-        UI[Infrastructure Layer<br/>MongoDB Repository<br/>Uniqueness Checks]
+        UI[Infrastructure Layer<br/>MongoDB Repository<br/>JWT Token Generation]
         
         UA --> UApp
         UApp --> UD
@@ -25,7 +29,7 @@ graph TB
     
     subgraph Pagos["📦 Pagos Microservice"]
         direction TB
-        PgA[API Layer<br/>Controllers + ApiResponse<br/>Payment Simulation]
+        PgA[API Layer<br/>Controllers + ApiResponse<br/>Payment Processing]
         PgApp[Application Layer<br/>Services & DTOs]
         PgD[Domain Layer<br/>Entities & Interfaces]
         PgI[Infrastructure Layer<br/>MongoDB Repository]
@@ -34,7 +38,12 @@ graph TB
         PgApp --> PgD
         PgI --> PgD
     end
+
+    GW --> UA
+    GW --> PA
+    GW --> PgA
     
+    style GW fill:#673AB7,color:#fff
     style UA fill:#2196F3,color:#fff
     style UApp fill:#4CAF50,color:#fff
     style UD fill:#FF9800,color:#fff

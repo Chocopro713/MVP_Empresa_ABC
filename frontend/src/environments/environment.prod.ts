@@ -1,8 +1,13 @@
 export const environment = {
   production: true,
+  // URL del API Gateway (recomendado)
+  gatewayUrl: 'http://localhost:5000/api',
+  // URLs directas a microservicios (compatibilidad)
   apiUrl: 'http://localhost',
-  usuariosApiUrl: 'http://localhost:5001/api',
-  pedidosApiUrl: 'http://localhost:5002/api',
-  pagosApiUrl: 'http://localhost:5003/api',
-  jsonPlaceholderUrl: 'https://jsonplaceholder.typicode.com'
+  usuariosApiUrl: 'http://localhost:5000/api', // Gateway: /api/auth/* y /api/users/*
+  pedidosApiUrl: 'http://localhost:5000/api',  // Gateway: /api/orders/*
+  pagosApiUrl: 'http://localhost:5000/api',    // Gateway: /api/payments/*
+  jsonPlaceholderUrl: 'https://jsonplaceholder.typicode.com',
+  // Habilitar Gateway (cambiar a false para usar microservicios directamente)
+  useGateway: true
 };

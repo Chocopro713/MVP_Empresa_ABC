@@ -111,61 +111,109 @@ interface MenuItem {
     
     .sidenav {
       width: 260px;
-      background: linear-gradient(180deg, #3f51b5 0%, #303f9f 100%);
-      color: white;
-    }
-    
-    .dark-theme .sidenav {
-      background: linear-gradient(180deg, #424242 0%, #303030 100%);
+      background: var(--bg-sidebar);
+      border-right: none;
+      box-shadow: var(--shadow-lg);
     }
     
     .sidenav-header {
-      padding: 20px;
+      padding: 24px 20px;
       display: flex;
       align-items: center;
       gap: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.15);
     }
     
     .logo-icon {
-      font-size: 32px;
-      width: 32px;
-      height: 32px;
+      font-size: 36px;
+      width: 36px;
+      height: 36px;
+      color: #ffffff;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
     }
     
     .logo-text {
-      font-size: 20px;
-      font-weight: 500;
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: #ffffff;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    
+    mat-nav-list {
+      padding: 12px 0;
     }
     
     .nav-item {
+      margin: 4px 12px;
+      border-radius: 12px;
+      transition: all 0.2s ease;
+      height: 48px;
+    }
+    
+    /* Estilos del nav-item para texto siempre visible */
+    .nav-item ::ng-deep .mdc-list-item__primary-text {
       color: rgba(255, 255, 255, 0.9) !important;
-      margin: 4px 8px;
-      border-radius: 8px;
+      font-weight: 500;
+    }
+    
+    .nav-item ::ng-deep .mat-icon {
+      color: rgba(255, 255, 255, 0.85) !important;
     }
     
     .nav-item:hover {
-      background: rgba(255, 255, 255, 0.1) !important;
+      background: rgba(255, 255, 255, 0.15) !important;
+      transform: translateX(4px);
+    }
+    
+    .nav-item:hover ::ng-deep .mdc-list-item__primary-text {
+      color: #ffffff !important;
+    }
+    
+    .nav-item:hover ::ng-deep .mat-icon {
+      color: #ffffff !important;
     }
     
     .active-link {
       background: rgba(255, 255, 255, 0.2) !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+    
+    .active-link ::ng-deep .mdc-list-item__primary-text {
+      color: #ffffff !important;
+      font-weight: 600;
+    }
+    
+    .active-link ::ng-deep .mat-icon {
+      color: #ffffff !important;
     }
     
     .content {
       display: flex;
       flex-direction: column;
       height: 100%;
+      background-color: var(--bg-tertiary);
     }
     
     .toolbar {
       position: sticky;
       top: 0;
       z-index: 100;
+      background: var(--bg-card) !important;
+      color: var(--text-primary) !important;
+      border-bottom: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .toolbar .mat-icon {
+      color: var(--text-primary);
     }
     
     .toolbar-title {
       font-size: 18px;
-      margin-left: 8px;
+      font-weight: 500;
+      margin-left: 12px;
+      color: var(--text-primary);
     }
     
     .spacer {
@@ -176,18 +224,35 @@ interface MenuItem {
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-right: 16px;
+      margin-right: 8px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      background: var(--bg-secondary);
+      transition: background 0.2s ease;
+    }
+    
+    .theme-toggle:hover {
+      background: var(--bg-tertiary);
+    }
+    
+    .theme-toggle .mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+      color: var(--accent-orange);
     }
     
     .main-content {
       flex: 1;
       padding: 24px;
       overflow: auto;
-      background-color: #fafafa;
+      background-color: var(--bg-tertiary);
+      animation: fadeIn 0.3s ease;
     }
     
-    .dark-theme .main-content {
-      background-color: #212121;
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
     
     .user-info {
@@ -195,6 +260,16 @@ interface MenuItem {
       display: flex;
       align-items: center;
       gap: 12px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      margin: 8px;
+    }
+    
+    .user-info .mat-icon {
+      font-size: 40px;
+      width: 40px;
+      height: 40px;
+      color: var(--accent-blue);
     }
     
     .user-info div {
@@ -202,17 +277,31 @@ interface MenuItem {
       flex-direction: column;
     }
     
+    .user-info strong {
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+    
     .user-info small {
-      color: #666;
+      color: var(--text-secondary);
+      font-size: 12px;
     }
     
     @media (max-width: 768px) {
       .sidenav {
-        width: 100%;
+        width: 280px;
       }
       
       .toolbar-title {
         font-size: 14px;
+      }
+      
+      .main-content {
+        padding: 16px;
+      }
+      
+      .theme-toggle {
+        padding: 4px 8px;
       }
     }
   `]
@@ -223,11 +312,8 @@ export class MainLayoutComponent {
 
   menuItems: MenuItem[] = [
     { label: 'Inicio', icon: 'home', route: '/dashboard/home' },
-    { label: 'Usuarios', icon: 'people', route: '/dashboard/users' },
     { label: 'Pedidos', icon: 'shopping_cart', route: '/dashboard/pedidos' },
     { label: 'Pagos', icon: 'payment', route: '/dashboard/pagos' },
-    { label: 'Publicaciones', icon: 'article', route: '/dashboard/posts' },
-    { label: 'Tareas', icon: 'check_circle', route: '/dashboard/todos' },
     { label: 'Administración', icon: 'admin_panel_settings', route: '/dashboard/admin', roles: ['admin'] }
   ];
 

@@ -4,16 +4,16 @@ graph TB
     end
     
     subgraph Frontend["📱 Frontend Layer"]
-        Angular["Angular 19 SPA<br/>───────────<br/>• Standalone Components<br/>• Angular Material<br/>• Guards & Interceptors"]
+        Angular["Angular 19 SPA<br/>───────────<br/>• Standalone Components<br/>• Angular Material<br/>• Guards & Interceptors<br/>• PWA Ready"]
     end
     
     subgraph Gateway["🚪 API Gateway"]
-        Nginx["Nginx<br/>───────────<br/>• Reverse Proxy<br/>• Load Balancing<br/>• SSL Termination"]
+        GatewayAPI["Gateway API<br/>───────────<br/>.NET 9 YARP<br/>Reverse Proxy<br/>Port: 5050"]
     end
     
     subgraph Microservices["⚙️ Microservices Layer"]
         direction LR
-        Usuarios["Usuarios API<br/>───────────<br/>.NET 9<br/>Clean Architecture<br/>Port: 5001"]
+        Usuarios["Usuarios API<br/>───────────<br/>.NET 9<br/>JWT Auth<br/>Clean Architecture<br/>Port: 5001"]
         Pedidos["Pedidos API<br/>───────────<br/>.NET 9<br/>Clean Architecture<br/>Port: 5002"]
         Pagos["Pagos API<br/>───────────<br/>.NET 9<br/>Clean Architecture<br/>Port: 5003"]
     end
@@ -30,18 +30,18 @@ graph TB
     end
     
     Browser --> Angular
-    Angular --> Nginx
+    Angular --> GatewayAPI
     Angular -.-> JSONPlaceholder
-    Nginx --> Usuarios
-    Nginx --> Pedidos
-    Nginx --> Pagos
+    GatewayAPI --> Usuarios
+    GatewayAPI --> Pedidos
+    GatewayAPI --> Pagos
     Usuarios --> MongoUsers
     Pedidos --> MongoPedidos
     Pagos --> MongoPagos
     
     style Browser fill:#e1f5fe
     style Angular fill:#DD0031,color:#fff
-    style Nginx fill:#009639,color:#fff
+    style GatewayAPI fill:#512BD4,color:#fff
     style Usuarios fill:#512BD4,color:#fff
     style Pedidos fill:#512BD4,color:#fff
     style Pagos fill:#512BD4,color:#fff

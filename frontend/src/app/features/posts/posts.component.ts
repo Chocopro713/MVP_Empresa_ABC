@@ -65,64 +65,153 @@ import { Post } from '../../core/models/models';
     .posts-container {
       max-width: 1200px;
       margin: 0 auto;
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
     
     .header {
-      margin-bottom: 24px;
+      margin-bottom: 28px;
     }
     
     .header h1 {
       margin-bottom: 4px;
+      font-size: 28px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
     
     .subtitle {
-      color: #666;
+      color: var(--text-secondary, #666);
       margin-bottom: 12px;
+      font-size: 14px;
     }
     
     .loading {
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 48px;
+      padding: 60px;
       gap: 16px;
+    }
+
+    .loading p {
+      color: var(--text-secondary, #666);
+      font-size: 14px;
     }
     
     .posts-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-      gap: 20px;
+      gap: 24px;
     }
     
     .post-card {
-      transition: transform 0.2s;
+      border-radius: 16px !important;
+      background: var(--surface-color, #ffffff) !important;
+      border: 1px solid var(--border-color, rgba(0,0,0,0.08));
+      transition: all 0.3s ease;
+      overflow: hidden;
     }
     
     .post-card:hover {
-      transform: translateY(-4px);
+      transform: translateY(-6px);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.12);
     }
     
     .post-icon {
-      background: #e3f2fd;
-      color: #1976d2;
-      padding: 8px;
-      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+      color: #667eea !important;
+      padding: 12px;
+      border-radius: 12px !important;
+      width: 44px !important;
+      height: 44px !important;
+      font-size: 20px !important;
     }
     
     mat-card-title {
       font-size: 16px !important;
-      line-height: 1.4 !important;
+      line-height: 1.5 !important;
+      font-weight: 600 !important;
+      color: var(--text-color, #1a1a2e) !important;
+    }
+
+    mat-card-subtitle {
+      color: var(--text-secondary, #666) !important;
+      font-size: 13px !important;
     }
     
     mat-card-content p {
-      color: #666;
-      line-height: 1.6;
+      color: var(--text-secondary, #666);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    mat-card-actions {
+      padding: 16px !important;
+      border-top: 1px solid var(--border-color, #e0e0e0);
+    }
+
+    mat-card-actions button {
+      border-radius: 8px;
     }
     
     .load-more {
       display: flex;
       justify-content: center;
-      margin-top: 32px;
+      margin-top: 40px;
+    }
+
+    .load-more button {
+      border-radius: 12px !important;
+      padding: 12px 32px !important;
+      font-weight: 600;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+      color: white !important;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+      transition: all 0.3s ease;
+    }
+
+    .load-more button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+    }
+
+    @media (max-width: 600px) {
+      .posts-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    :host-context(.dark-theme) .post-card {
+      background: #1e1e2e !important;
+      border-color: rgba(255,255,255,0.1);
+    }
+
+    :host-context(.dark-theme) .post-card:hover {
+      box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+    }
+
+    :host-context(.dark-theme) mat-card-title {
+      color: #ffffff !important;
+    }
+
+    :host-context(.dark-theme) mat-card-content p {
+      color: #a0a0a0;
+    }
+
+    :host-context(.dark-theme) mat-card-actions {
+      border-color: rgba(255,255,255,0.1);
+    }
+
+    :host-context(.dark-theme) .post-icon {
+      background: rgba(102, 126, 234, 0.2);
     }
   `]
 })

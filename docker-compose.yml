@@ -69,6 +69,38 @@ services:
   # MICROSERVICES
   # ============================================
 
+  api-gateway:
+    build:
+      context: ./backend/gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    restart: unless-stopped
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:80
+      - Jwt__SecretKey=NexosABC_SuperSecretKey_2024_MustBe32CharsOrMore!
+      - Jwt__Issuer=NexosABC.API
+      - Jwt__Audience=NexosABC.Client
+      - ReverseProxy__Clusters__usuarios-cluster__Destinations__usuarios-api__Address=http://usuarios-api:80
+      - ReverseProxy__Clusters__pedidos-cluster__Destinations__pedidos-api__Address=http://pedidos-api:80
+      - ReverseProxy__Clusters__pagos-cluster__Destinations__pagos-api__Address=http://pagos-api:80
+    ports:
+      - "5050:80"
+    depends_on:
+      usuarios-api:
+        condition: service_healthy
+      pedidos-api:
+        condition: service_healthy
+      pagos-api:
+        condition: service_healthy
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   usuarios-api:
     build:
       context: ./backend/usuarios
@@ -154,9 +186,7 @@ services:
     ports:
       - "4200:80"
     depends_on:
-      - usuarios-api
-      - pedidos-api
-      - pagos-api
+      - api-gateway
     networks:
       - microservices-network
 
